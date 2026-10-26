@@ -1,5 +1,6 @@
 // All calls to the Spring Boot backend live here.
 const KEY = 'peer-review-auth';
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
 
 export const getAuth = () => {
   try { return JSON.parse(sessionStorage.getItem(KEY)); } catch { return null; }
@@ -14,7 +15,7 @@ async function request(method, path, body, token) {
   const auth = token || getAuth()?.token;
   let res;
   try {
-    res = await fetch('/api' + path, {
+    res = await fetch(`${API_BASE_URL}/api${path}`, {
       method,
       headers: {
         'Content-Type': 'application/json',
