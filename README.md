@@ -58,42 +58,34 @@ npm run dev
 ```
 Open http://localhost:5173. Vite forwards `/api` requests to port 8080.
 
-## Deploy to Vercel and Railway
+## Deploy on Vercel
 
-The recommended deployment uses Vercel for the React/Vite frontend and Railway for the Spring Boot API and managed MySQL database. The Vercel project root is `frontend/`; the Railway backend service root is `backend/`, where the production `Dockerfile` is located.
+The repository is configured to deploy the React frontend and Spring Boot API as separate Vercel Container Runtime services in one Vercel project. The Container Runtime is currently in beta. MySQL must still run with a managed database provider; Vercel Marketplace can connect a provider to your project, but the database is not stored inside these containers.
 
-### 1. Deploy the backend and database on Railway
+### 1. Create the MySQL database
 
-1. Create a Railway project and add a MySQL database service.
-2. Add a backend service from this GitHub repository. Set its root directory to `/backend` so Railway builds `backend/Dockerfile`.
-3. Add these backend service variables in Railway (replace `MySQL` if you named your database service differently):
+1. Create a Vercel account and import this GitHub repository as a project, using the repository root as the project root.
+2. In the Vercel Marketplace, choose a managed MySQL provider and provision a database. Check the provider's current pricing and ensure Vercel workloads can connect to it without a fixed outbound IP allowlist.
+3. Keep the database host, name, username, and password private. Do not put database credentials in frontend variables or commit them to Git.
+
+### 2. Configure and deploy the app
+
+1. Keep the project root at the repository root so Vercel can read `vercel.json` and build both services.
+2. Set these project environment variables for the backend service:
 
    | Variable | Value |
    | --- | --- |
    | `SPRING_PROFILES_ACTIVE` | `prod,mysql` |
-   | `DB_URL` | `jdbc:mysql://${{MySQL.MYSQLHOST}}:${{MySQL.MYSQLPORT}}/${{MySQL.MYSQLDATABASE}}` |
-   | `DB_USER` | `${{MySQL.MYSQLUSER}}` |
-   | `DB_PASSWORD` | `${{MySQL.MYSQLPASSWORD}}` |
-   | `TEACHER_CODE` | A new, private invite code of your choice |
-   | `CORS_ORIGIN` | Add the Vercel production origin after Step 2 |
-   | `EMAIL_DOMAIN` | Optional; leave unset to allow any email domain |
+   | `DB_URL` | JDBC URL from your MySQL provider, such as `jdbc:mysql://HOST:PORT/DATABASE` |
+   | `DB_USER` | Database username from the provider |
+   | `DB_PASSWORD` | Database password from the provider |
+   | `TEACHER_CODE` | A new private invite code of your choice |
+   | `CORS_ORIGIN` | The Vercel production origin, for example `https://your-project.vercel.app` |
 
-4. Generate a public Railway domain for the backend service and wait for its deployment to finish. Copy its HTTPS origin, for example `https://your-api.up.railway.app`.
+3. Deploy the project and inspect the frontend and backend service build/runtime logs in Vercel. The root `vercel.json` routes `/api/...` requests to Spring Boot and all other paths to the React frontend.
+4. Open the Vercel production URL and test signup, login, submission, and review. Production does not create demo accounts; use the private `TEACHER_CODE` for teacher registration.
 
-### 2. Deploy the frontend on Vercel
-
-1. Import this repository into Vercel.
-2. Set the project root directory to `frontend`. Vercel should detect Vite; use `npm run build` as the build command and `dist` as the output directory.
-3. Add the production environment variable `VITE_API_BASE_URL` with the Railway HTTPS origin from Step 1, without a trailing slash or `/api` suffix.
-4. Deploy and copy the Vercel production URL, for example `https://your-project.vercel.app`.
-
-### 3. Connect and verify the services
-
-1. In Railway, set `CORS_ORIGIN` to the exact Vercel production origin (scheme and hostname only), then redeploy the backend.
-2. Open the Vercel site and register student and teacher accounts. The production profile does not seed demo accounts. Use the `TEACHER_CODE` you configured for teacher registration.
-3. Test login, submit code as one student, and review it as another student.
-
-The frontend reads `VITE_API_BASE_URL` at build time. Set it in Vercel before deploying or redeploying. Keep `DB_PASSWORD` and `TEACHER_CODE` only in Railway's private variables; never put them in frontend variables or commit them to Git.
+The frontend uses same-origin `/api` URLs, so it does not need a public API URL or a `VITE_API_BASE_URL` setting for this deployment. Set `CORS_ORIGIN` to the exact production origin. Vercel preview URLs use different origins; they may need to be added to the comma-separated CORS allowlist if you want to test authenticated API calls on previews.
 
 **3. Try it**
 1. Register three students (Register page, role Student).

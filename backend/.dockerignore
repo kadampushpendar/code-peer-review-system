@@ -1,0 +1,6 @@
+target
+bin
+data
+.git
+*.mv.db
+*.trace.db
