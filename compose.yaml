@@ -1,0 +1,23 @@
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-peer_review_db}
+      MYSQL_USER: ${MYSQL_USER:-peer_review_app}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Run scripts/setup-mysql.ps1 to create local credentials}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Run scripts/setup-mysql.ps1 to create local credentials}
+    ports:
+      - "127.0.0.1:${MYSQL_PORT:-3307}:3306"
+    volumes:
+      - peer-review-mysql-data:/var/lib/mysql
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - mysqladmin ping -h 127.0.0.1 -u root -p"$${MYSQL_ROOT_PASSWORD}" --silent
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+volumes:
+  peer-review-mysql-data:

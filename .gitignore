@@ -1,0 +1,11 @@
+node_modules/
+dist/
+target/
+/backend/data/
+/backend/bin/
+.env
+*.local
+application-local.properties
+.idea/
+.vscode/
+/scratch/
