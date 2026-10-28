@@ -83,9 +83,11 @@ The repository is configured to deploy the React frontend and Spring Boot API as
    | `CORS_ORIGIN` | The Vercel production origin, for example `https://your-project.vercel.app` |
 
 3. Deploy the project and inspect the frontend and backend service build/runtime logs in Vercel. The root `vercel.json` routes `/api/...` requests to Spring Boot and all other paths to the React frontend.
-4. Open the Vercel production URL and test signup, login, submission, and review. Production does not create demo accounts; use the private `TEACHER_CODE` for teacher registration.
+4. Open the Vercel production URL and test demo login, signup, submission, and review. Use the private `TEACHER_CODE` when registering any additional teacher.
 
 The frontend uses same-origin `/api` URLs, so it does not need a public API URL or a `VITE_API_BASE_URL` setting for this deployment. Set `CORS_ORIGIN` to the exact production origin. Vercel preview URLs use different origins; they may need to be added to the comma-separated CORS allowlist if you want to test authenticated API calls on previews.
+
+The production backend seeds the demo accounts when they are missing: `alice@university.edu`, `bob@university.edu`, and `prof@university.edu`, all with password `password123`. They are created only once; existing accounts are not modified. These are public, writable accounts—anyone who knows the credentials can sign in and change application data. Do not enable this on a deployment containing sensitive or real user data.
 
 **3. Try it**
 1. Register three students (Register page, role Student).
