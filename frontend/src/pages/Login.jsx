@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
-import { ArrowLeft, FileCode2, LogIn, Sparkles, UserCheck } from 'lucide-react';
+import { ArrowLeft, FileCode2, LogIn } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
@@ -25,11 +25,6 @@ export default function Login() {
     } finally {
       setBusy(false);
     }
-  }
-
-  function fillDemo(demoEmail, demoPass) {
-    setEmail(demoEmail);
-    setPassword(demoPass);
   }
 
   return (
@@ -102,39 +97,6 @@ export default function Login() {
             </Link>
           </div>
 
-          {/* Quick preset hint */}
-          <div
-            style={{
-              marginTop: '22px',
-              paddingTop: '16px',
-              borderTop: '1px solid var(--line)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '6px',
-            }}
-          >
-            <small className="eyebrow" style={{ textAlign: 'center' }}>
-              DEMO QUICK-FILL
-            </small>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button
-                type="button"
-                className="btn outline"
-                onClick={() => fillDemo('alice@university.edu', 'password123')}
-                style={{ flex: 1, minHeight: '28px', fontSize: '9px' }}
-              >
-                Student: Alice
-              </button>
-              <button
-                type="button"
-                className="btn outline"
-                onClick={() => fillDemo('prof@university.edu', 'password123')}
-                style={{ flex: 1, minHeight: '28px', fontSize: '9px' }}
-              >
-                Teacher: Prof
-              </button>
-            </div>
-          </div>
         </form>
       </div>
     </div>

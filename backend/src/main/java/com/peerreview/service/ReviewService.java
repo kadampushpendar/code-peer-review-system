@@ -8,6 +8,7 @@ import com.peerreview.exception.ApiException;
 import com.peerreview.model.Comment;
 import com.peerreview.model.Review;
 import com.peerreview.model.ReviewStatus;
+import com.peerreview.model.Student;
 import com.peerreview.model.Teacher;
 import com.peerreview.model.User;
 import com.peerreview.repository.CommentRepository;
@@ -43,7 +44,11 @@ public class ReviewService {
         Review r = find(id);
         boolean reviewer = r.getReviewer().getId().equals(me.getId());
         boolean author = r.getSubmission().getStudent().getId().equals(me.getId());
-        if (!(me instanceof Teacher) && !reviewer && !author) {
+        boolean teacherOwnsClass = me instanceof Teacher teacher
+                && r.getSubmission().getStudent() instanceof Student student
+                && student.getTeacher() != null
+                && student.getTeacher().getId().equals(teacher.getId());
+        if (!teacherOwnsClass && !reviewer && !author) {
             throw new ApiException(HttpStatus.FORBIDDEN, "You cannot view this review");
         }
         return mapper.review(r, true);

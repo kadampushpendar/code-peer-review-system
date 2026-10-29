@@ -34,10 +34,13 @@ public class ReportService {
     }
 
     @Transactional(readOnly = true)
-    public ReportResponse build() {
-        List<Student> students = users.findAllStudents();
-        List<CodeSubmission> subs = submissions.findAllByOrderByCreatedAtDesc();
-        List<Review> revs = reviews.findAll();
+    public ReportResponse build(Long teacherId) {
+        List<Student> students = users.findStudentsByTeacherId(teacherId);
+        List<CodeSubmission> subs = submissions.findByTeacherIdOrderByCreatedAtDesc(teacherId);
+        List<Long> studentIds = students.stream().map(Student::getId).toList();
+        List<Review> revs = reviews.findAll().stream()
+                .filter(r -> studentIds.contains(r.getReviewer().getId()))
+                .toList();
         Map<Long, Review> bySub = revs.stream().collect(Collectors.toMap(r -> r.getSubmission().getId(), Function.identity()));
 
         List<ReportRow> rows = subs.stream().map(s -> {

@@ -53,6 +53,7 @@ export const api = {
     setAuth({ token, user });
     return user;
   },
+  currentUser: () => request('GET', '/auth/me'),
   register: (body) => request('POST', '/auth/register', body),
   submissions: () => request('GET', '/submissions'),
   createSubmission: (body) => request('POST', '/submissions', body),

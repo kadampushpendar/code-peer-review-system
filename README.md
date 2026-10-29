@@ -79,21 +79,18 @@ The repository is configured to deploy the React frontend and Spring Boot API as
    | `DB_URL` | JDBC URL from your MySQL provider, such as `jdbc:mysql://HOST:PORT/DATABASE` |
    | `DB_USER` | Database username from the provider |
    | `DB_PASSWORD` | Database password from the provider |
-   | `TEACHER_CODE` | A new private invite code of your choice |
    | `CORS_ORIGIN` | The Vercel production origin, for example `https://your-project.vercel.app` |
 
 3. Deploy the project and inspect the frontend and backend service build/runtime logs in Vercel. The root `vercel.json` routes `/api/...` requests to Spring Boot and all other paths to the React frontend.
-4. Open the Vercel production URL and test demo login, signup, submission, and review. Use the private `TEACHER_CODE` when registering any additional teacher.
+4. Open the Vercel production URL and test demo login, signup, submission, and review. Instructors can register without an invite code and receive a classroom code to share with students.
 
 The frontend uses same-origin `/api` URLs, so it does not need a public API URL or a `VITE_API_BASE_URL` setting for this deployment. Set `CORS_ORIGIN` to the exact production origin. Vercel preview URLs use different origins; they may need to be added to the comma-separated CORS allowlist if you want to test authenticated API calls on previews.
 
-The production backend seeds the demo accounts when they are missing: `alice@university.edu`, `bob@university.edu`, and `prof@university.edu`, all with password `password123`. They are created only once; existing accounts are not modified. These are public, writable accounts—anyone who knows the credentials can sign in and change application data. Do not enable this on a deployment containing sensitive or real user data.
-
 **3. Try it**
-1. Register three students (Register page, role Student).
-2. Register one teacher with the `TEACHER_CODE` you set.
+1. Register an instructor. Their classroom code appears on the instructor dashboard.
+2. Register students using that instructor's classroom code.
 3. Log in as student 1 and submit code. Another student is assigned automatically and gets a notification.
-4. Log in as that student, open the review, click line numbers to comment, then submit feedback and a score.
+4. Log in as that student, open the review, click line numbers to comment, then submit feedback and a score. Peer reviewers are selected from the same instructor classroom.
 5. Student 1 sees the feedback. The teacher sees progress under Reports.
 
 ## Java OOPS concepts used (backend `model` package)
@@ -111,14 +108,15 @@ The production backend seeds the demo accounts when they are missing: `alice@uni
 
 | Method | Endpoint                        | Who             | Purpose                                   |
 | ------ | ------------------------------- | --------------- | ----------------------------------------- |
-| POST   | `/api/auth/register`            | anyone          | Register (teachers need the invite code)  |
-| POST   | `/api/auth/login`               | anyone          | Check credentials, return the user        |
-| GET    | `/api/submissions`              | logged in       | Own submissions (teacher: all)            |
+| POST   | `/api/auth/register`            | anyone          | Register (students join with a classroom code) |
+| POST   | `/api/auth/login`               | anyone          | Check credentials, return the user and classroom code |
+| GET    | `/api/auth/me`                  | logged in       | Return the current user and ensure an instructor classroom code exists |
+| GET    | `/api/submissions`              | logged in       | Own submissions (instructors: classroom submissions) |
 | POST   | `/api/submissions`              | student         | Submit code and auto-assign a reviewer    |
-| GET    | `/api/submissions/{id}`         | author, reviewer, teacher | View one submission             |
-| POST   | `/api/submissions/{id}/assign`  | teacher         | Assign a reviewer (`?reviewerId=` optional) |
+| GET    | `/api/submissions/{id}`         | author, reviewer, classroom instructor | View one submission |
+| POST   | `/api/submissions/{id}/assign`  | classroom instructor | Assign a reviewer (`?reviewerId=` optional) |
 | GET    | `/api/reviews`                  | logged in       | Reviews assigned to you                   |
-| GET    | `/api/reviews/{id}`             | author, reviewer, teacher | Code, comments and feedback     |
+| GET    | `/api/reviews/{id}`             | author, reviewer, classroom instructor | Code, comments and feedback |
 | POST   | `/api/reviews/{id}/comments`    | assigned reviewer | Add a line comment                      |
 | PATCH  | `/api/reviews/{id}/submit`      | assigned reviewer | Submit feedback and score               |
 | GET    | `/api/notifications`            | logged in       | Your notifications                        |
@@ -130,7 +128,7 @@ Differences from the original plan: reviews are created automatically when code 
 ## Security notes
 
 - Passwords are hashed with BCrypt. Roles and ownership are checked on the server.
-- Teacher accounts need an invite code, so nobody can make themselves a teacher.
+- Each instructor receives a unique classroom code; students must use it to join that instructor's classroom.
 - Submitted code is only stored and displayed. It is never compiled or run.
 - Login uses HTTP Basic over a stateless API, and the browser keeps the credentials in `sessionStorage` until log out. This is fine for a college project on localhost. Before deploying, serve over HTTPS and move to JWT or session cookies.
 - Keep database passwords in environment variables, never in Git.

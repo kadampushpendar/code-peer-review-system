@@ -2,6 +2,8 @@ package com.peerreview.dto;
 
 import com.peerreview.model.Notification;
 import com.peerreview.model.Severity;
+import com.peerreview.model.Student;
+import com.peerreview.model.Teacher;
 import com.peerreview.model.User;
 import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
@@ -17,11 +19,15 @@ public final class Dtos {
             @NotBlank @Email @Size(max = 150) String email,
             @NotBlank @Size(min = 8, max = 100) String password,
             @NotBlank @Pattern(regexp = "STUDENT|TEACHER", message = "Role must be STUDENT or TEACHER") String role,
-            String teacherCode) { }
+            String classroomCode) { }
 
-    public record UserResponse(Long id, String name, String email, String role) {
+    public record UserResponse(Long id, String name, String email, String role, String classroomCode,
+                               String instructorName) {
         public static UserResponse of(User u) {
-            return new UserResponse(u.getId(), u.getName(), u.getEmail(), u.getRole());
+            String classroomCode = u instanceof Teacher teacher ? teacher.getClassroomCode() : null;
+            String instructorName = u instanceof Student student && student.getTeacher() != null
+                    ? student.getTeacher().getName() : null;
+            return new UserResponse(u.getId(), u.getName(), u.getEmail(), u.getRole(), classroomCode, instructorName);
         }
     }
 

@@ -104,7 +104,10 @@ export default function StudentDashboard() {
           <h1>
             Welcome back, <span>{user?.name}</span>
           </h1>
-          <p>Track your Java submissions, inspect peer feedback, and evaluate assigned code.</p>
+          <p>
+            Track your Java submissions, inspect peer feedback, and evaluate assigned code.
+            {user?.instructorName && <> Instructor: <b>{user.instructorName}</b>.</>}
+          </p>
         </div>
         <Link to="/submit" className="btn">
           <Plus size={14} /> New Submission

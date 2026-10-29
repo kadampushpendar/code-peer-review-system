@@ -39,7 +39,7 @@ public class SubmissionService {
     @Transactional(readOnly = true)
     public List<SubmissionResponse> list(User me) {
         List<CodeSubmission> list = (me instanceof Teacher)
-                ? submissions.findAllByOrderByCreatedAtDesc()
+                ? submissions.findByTeacherIdOrderByCreatedAtDesc(me.getId())
                 : submissions.findByStudent_IdOrderByCreatedAtDesc(me.getId());
         return list.stream().map(s -> mapper.submission(s, false)).toList();
     }
@@ -50,7 +50,11 @@ public class SubmissionService {
         boolean owner = s.getStudent().getId().equals(me.getId());
         boolean reviewer = reviews.findBySubmission_Id(id)
                 .map(r -> r.getReviewer().getId().equals(me.getId())).orElse(false);
-        if (!(me instanceof Teacher) && !owner && !reviewer) {
+        boolean teacherOwnsClass = me instanceof Teacher teacher
+                && s.getStudent() instanceof Student student
+                && student.getTeacher() != null
+                && student.getTeacher().getId().equals(teacher.getId());
+        if (!(me instanceof Teacher && teacherOwnsClass) && !(owner || reviewer)) {
             throw new ApiException(HttpStatus.FORBIDDEN, "You cannot view this submission");
         }
         return mapper.submission(s, true);
@@ -66,24 +70,41 @@ public class SubmissionService {
     }
 
     @Transactional
-    public SubmissionResponse assign(Long submissionId, Long reviewerId) {
+    public SubmissionResponse assign(Long submissionId, Long reviewerId, User teacher) {
         CodeSubmission s = find(submissionId);
+        if (s.getStudent() instanceof Student author && author.getTeacher() != null
+                && !author.getTeacher().getId().equals(teacher.getId())) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "You cannot assign reviews outside your classroom");
+        }
         if (reviews.findBySubmission_Id(s.getId()).isPresent()) {
             throw new ApiException(HttpStatus.CONFLICT, "This submission already has a reviewer");
         }
-        User reviewer = (reviewerId != null)
+        Student reviewer = (reviewerId != null)
                 ? users.findById(reviewerId).filter(u -> u instanceof Student)
+                        .map(Student.class::cast)
                         .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "Reviewer must be an existing student"))
                 : pickReviewer(s.getStudent())
                         .orElseThrow(() -> new ApiException(HttpStatus.CONFLICT, "No other student is available to review"));
+        ensureSameClass(s.getStudent(), reviewer);
         assignReviewer(s, reviewer);
         return mapper.submission(s, false);
     }
 
     private Optional<Student> pickReviewer(User author) {
-        return users.findAllStudents().stream()
+        List<Student> candidates = author instanceof Student student && student.getTeacher() != null
+                ? users.findStudentsByTeacherId(student.getTeacher().getId())
+                : users.findAllStudents();
+        return candidates.stream()
                 .filter(st -> !st.getId().equals(author.getId()))
                 .min(Comparator.comparingLong(st -> reviews.countByReviewer_IdAndStatus(st.getId(), ReviewStatus.IN_PROGRESS)));
+    }
+
+    private void ensureSameClass(User author, Student reviewer) {
+        if (author instanceof Student student && student.getTeacher() != null
+                && (reviewer.getTeacher() == null
+                || !student.getTeacher().getId().equals(reviewer.getTeacher().getId()))) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "Reviewer must belong to the same instructor classroom");
+        }
     }
 
     private void assignReviewer(CodeSubmission s, User reviewer) {

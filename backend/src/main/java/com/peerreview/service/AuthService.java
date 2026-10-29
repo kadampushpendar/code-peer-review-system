@@ -6,8 +6,6 @@ import com.peerreview.model.Student;
 import com.peerreview.model.Teacher;
 import com.peerreview.model.User;
 import com.peerreview.repository.UserRepository;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,15 +16,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthService {
     private final UserRepository users;
     private final PasswordEncoder encoder;
-    private final String teacherCode;
     private final String emailDomain;
 
     public AuthService(UserRepository users, PasswordEncoder encoder,
-                       @Value("${app.teacher-code}") String teacherCode,
                        @Value("${app.email-domain:}") String emailDomain) {
         this.users = users;
         this.encoder = encoder;
-        this.teacherCode = teacherCode;
         this.emailDomain = emailDomain.trim().toLowerCase();
     }
 
@@ -42,16 +37,30 @@ public class AuthService {
         String hash = encoder.encode(r.password());
         String name = r.name().trim();
         if (r.role().equals("TEACHER")) {
-            if (!codeMatches(r.teacherCode())) {
-                throw new ApiException(HttpStatus.FORBIDDEN, "Invalid teacher invite code");
-            }
-            return users.save(new Teacher(name, email, hash));
+            return users.save(new Teacher(name, email, hash, newUniqueClassroomCode()));
         }
-        return users.save(new Student(name, email, hash));
+        String classroomCode = r.classroomCode() == null ? "" : r.classroomCode().trim();
+        Teacher teacher = users.findTeacherByClassroomCode(classroomCode)
+                .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "Enter a valid instructor classroom code"));
+        return users.save(new Student(name, email, hash, teacher));
     }
 
-    private boolean codeMatches(String given) {
-        if (given == null) return false;
-        return MessageDigest.isEqual(given.getBytes(StandardCharsets.UTF_8), teacherCode.getBytes(StandardCharsets.UTF_8));
+    @Transactional
+    public User ensureClassroomCode(User user) {
+        if (user instanceof Teacher teacher && teacher.getClassroomCode() == null) {
+            teacher.assignClassroomCode(newUniqueClassroomCode());
+            return users.save(teacher);
+        }
+        return user;
+    }
+
+    private String newUniqueClassroomCode() {
+        for (int attempt = 0; attempt < 10; attempt++) {
+            String code = Teacher.generateClassroomCode();
+            if (users.findTeacherByClassroomCode(code).isEmpty()) {
+                return code;
+            }
+        }
+        throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not create an instructor classroom code");
     }
 }

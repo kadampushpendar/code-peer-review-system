@@ -39,7 +39,8 @@ public class SubmissionController {
 
     /** Teacher only. Optional ?reviewerId= picks a specific student; otherwise the least-busy student is chosen. */
     @PostMapping("/{id}/assign")
-    public SubmissionResponse assign(@PathVariable Long id, @RequestParam(required = false) Long reviewerId) {
-        return service.assign(id, reviewerId);
+    public SubmissionResponse assign(Authentication auth, @PathVariable Long id,
+                                     @RequestParam(required = false) Long reviewerId) {
+        return service.assign(id, reviewerId, current.of(auth));
     }
 }

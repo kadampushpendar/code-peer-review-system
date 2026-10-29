@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useCallback, useContext, useState } from 'react';
 import { api, getAuth, setAuth } from '../services/api';
 
 const AuthContext = createContext(null);
@@ -12,13 +12,22 @@ export function AuthProvider({ children }) {
     return u;
   }
 
+  const refreshUser = useCallback(async () => {
+    const stored = getAuth();
+    if (!stored) return null;
+    const updatedUser = await api.currentUser();
+    setAuth({ ...stored, user: updatedUser });
+    setUser(updatedUser);
+    return updatedUser;
+  }, []);
+
   function logout() {
     setAuth(null);
     setUser(null);
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

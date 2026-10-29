@@ -12,7 +12,7 @@ export default function Register() {
     email: '',
     password: '',
     role: 'STUDENT',
-    teacherCode: '',
+    classroomCode: '',
   });
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -106,15 +106,17 @@ export default function Register() {
             </select>
           </div>
 
-          {form.role === 'TEACHER' && (
+          {form.role === 'STUDENT' && (
             <div className="form-field">
-              <label htmlFor="code">FACULTY INVITE PASSCODE</label>
+              <label htmlFor="classroomCode">INSTRUCTOR CLASSROOM CODE</label>
               <input
-                id="code"
-                placeholder="Enter faculty access code"
-                value={form.teacherCode}
-                onChange={setField('teacherCode')}
+                id="classroomCode"
+                required
+                placeholder="Enter the code shared by your instructor"
+                value={form.classroomCode}
+                onChange={setField('classroomCode')}
               />
+              <small>Ask your instructor for their classroom code before signing up.</small>
             </div>
           )}
 

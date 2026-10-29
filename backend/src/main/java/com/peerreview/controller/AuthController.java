@@ -29,6 +29,11 @@ public class AuthController {
     /** The request is authenticated with HTTP Basic; reaching here means the credentials are valid. */
     @PostMapping("/login")
     public UserResponse login(Authentication authentication) {
-        return UserResponse.of(current.of(authentication));
+        return UserResponse.of(auth.ensureClassroomCode(current.of(authentication)));
+    }
+
+    @GetMapping("/me")
+    public UserResponse me(Authentication authentication) {
+        return UserResponse.of(auth.ensureClassroomCode(current.of(authentication)));
     }
 }

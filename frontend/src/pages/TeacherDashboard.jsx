@@ -9,16 +9,39 @@ import {
   Filter,
   ArrowRight,
   TrendingUp,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { api } from '../services/api';
 import { StatusTag } from '../components/ReviewCard';
+import { useAuth } from '../context/AuthContext';
 
 export default function TeacherDashboard() {
+  const { user, refreshUser } = useAuth();
   const location = useLocation();
   const [report, setReport] = useState(null);
   const [error, setError] = useState('');
+  const [copyError, setCopyError] = useState('');
+  const [copied, setCopied] = useState(false);
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+
+  async function copyClassroomCode() {
+    setCopyError('');
+    try {
+      await navigator.clipboard.writeText(user.classroomCode);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch {
+      setCopyError('Clipboard access is unavailable. Select and copy the code manually.');
+    }
+  }
+
+  useEffect(() => {
+    if (user?.role === 'TEACHER' && !user.classroomCode) {
+      refreshUser().catch((e) => setError(e.message));
+    }
+  }, [refreshUser, user]);
 
   useEffect(() => {
     api.report()
@@ -75,8 +98,25 @@ export default function TeacherDashboard() {
             <span className="online" /> INSTRUCTOR CONSOLE
           </span>
           <h1>Review Progress & Analytics</h1>
-          <p>Real-time cohort participation and feedback quality across all Java submissions.</p>
+          <p>Real-time participation and feedback quality across your classroom's Java submissions.</p>
         </div>
+      </div>
+
+      <div className="panel" style={{ marginBottom: '22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+        <div>
+          <h3 style={{ margin: '0 0 6px' }}>Your classroom code</h3>
+          <p style={{ margin: 0 }}>Share this code with students so they join your instructor classroom.</p>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <code style={{ font: '500 20px DM Mono', letterSpacing: '3px', color: 'var(--cyan)' }}>
+            {user?.classroomCode || 'Unavailable'}
+          </code>
+          <button type="button" className="btn outline" onClick={copyClassroomCode} disabled={!user?.classroomCode}>
+            {copied ? <Check size={14} /> : <Copy size={14} />}
+            {copied ? 'Copied' : 'Copy code'}
+          </button>
+        </div>
+        {copyError && <div className="error-banner" style={{ width: '100%' }}>{copyError}</div>}
       </div>
 
       {/* Metrics Cards */}

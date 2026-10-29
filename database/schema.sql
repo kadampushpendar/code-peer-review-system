@@ -8,7 +8,10 @@ CREATE TABLE users (
     name VARCHAR(100) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
-    role VARCHAR(20) NOT NULL            -- 'STUDENT' or 'TEACHER' (inheritance discriminator)
+    role VARCHAR(20) NOT NULL,           -- 'STUDENT' or 'TEACHER' (inheritance discriminator)
+    classroom_code VARCHAR(8) UNIQUE,
+    teacher_id BIGINT,
+    FOREIGN KEY (teacher_id) REFERENCES users(id)
 );
 
 CREATE TABLE submissions (
